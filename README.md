@@ -93,8 +93,6 @@ cd hermes-forge
 
 ```
 
----
-
 ### 2. Create virtual environment
 
 ```
@@ -103,8 +101,6 @@ python3 -m venv venv
 source venv/bin/activate
 
 ```
-
----
 
 ### 3. Install dependencies
 
@@ -115,8 +111,6 @@ python -m playwright install chromium
 
 ```
 
----
-
 ### 4. Add environment variables
 
 Create `.env` file:
@@ -126,8 +120,6 @@ Create `.env` file:
 TELEGRAM_TOKEN=your_bot_token_here
 
 ```
-
----
 
 ### 5. Run everything
 
@@ -192,8 +184,6 @@ This enables:
 ### ✨ Improve Mode
 Refine your app with natural language:
 > "Add undo button and color picker"
-
----
 
 ### ⚡ Auto Improve (v1 → v5)
 Runs multiple improvement passes automatically:
