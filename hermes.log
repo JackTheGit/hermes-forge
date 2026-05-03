@@ -1,0 +1,80 @@
+1777039965.085379:          hermes.cli:     DEBUG | Running hermes with the following command line arguments: Namespace(subcommand='process', path=PosixPath('.'), config=PosixPath('hermes.toml'), options=[], command=<hermes.commands.process.base.HermesProcessCommand object at 0x766f8abb3ec0>)
+1777039965.085563:          hermes.cli:     DEBUG | Loading settings...
+1777039965.085636:      hermes.process:     ERROR | hermes.toml was not found. Try to run 'hermes init' first or create one manually.
+1777039965.085687:          hermes.cli:     ERROR | An error occurred during execution of process (Find details in './hermes.log')
+1777039965.085761:          hermes.cli:     DEBUG | Original exception was: [Errno 2] No such file or directory: 'hermes.toml'
+1777039965.532413:          hermes.cli:     DEBUG | Running hermes with the following command line arguments: Namespace(subcommand='process', path=PosixPath('.'), config=PosixPath('hermes.toml'), options=[], command=<hermes.commands.process.base.HermesProcessCommand object at 0x761c5ec7e300>)
+1777039965.532581:          hermes.cli:     DEBUG | Loading settings...
+1777039965.532648:      hermes.process:     ERROR | hermes.toml was not found. Try to run 'hermes init' first or create one manually.
+1777039965.532696:          hermes.cli:     ERROR | An error occurred during execution of process (Find details in './hermes.log')
+1777039965.532773:          hermes.cli:     DEBUG | Original exception was: [Errno 2] No such file or directory: 'hermes.toml'
+1777039965.978652:          hermes.cli:     DEBUG | Running hermes with the following command line arguments: Namespace(subcommand='process', path=PosixPath('.'), config=PosixPath('hermes.toml'), options=[], command=<hermes.commands.process.base.HermesProcessCommand object at 0x711d6f9df7d0>)
+1777039965.978819:          hermes.cli:     DEBUG | Loading settings...
+1777039965.978885:      hermes.process:     ERROR | hermes.toml was not found. Try to run 'hermes init' first or create one manually.
+1777039965.978932:          hermes.cli:     ERROR | An error occurred during execution of process (Find details in './hermes.log')
+1777039965.979010:          hermes.cli:     DEBUG | Original exception was: [Errno 2] No such file or directory: 'hermes.toml'
+1777040033.590559:          hermes.cli:     DEBUG | Running hermes with the following command line arguments: Namespace(subcommand='process', path=PosixPath('.'), config=PosixPath('hermes.toml'), options=[], command=<hermes.commands.process.base.HermesProcessCommand object at 0x787fac289820>)
+1777040033.590734:          hermes.cli:     DEBUG | Loading settings...
+1777040033.590805:      hermes.process:     ERROR | hermes.toml was not found. Try to run 'hermes init' first or create one manually.
+1777040033.590855:          hermes.cli:     ERROR | An error occurred during execution of process (Find details in './hermes.log')
+1777040033.590933:          hermes.cli:     DEBUG | Original exception was: [Errno 2] No such file or directory: 'hermes.toml'
+1777040034.042721:          hermes.cli:     DEBUG | Running hermes with the following command line arguments: Namespace(subcommand='process', path=PosixPath('.'), config=PosixPath('hermes.toml'), options=[], command=<hermes.commands.process.base.HermesProcessCommand object at 0x790803f9b770>)
+1777040034.042903:          hermes.cli:     DEBUG | Loading settings...
+1777040034.042972:      hermes.process:     ERROR | hermes.toml was not found. Try to run 'hermes init' first or create one manually.
+1777040034.043021:          hermes.cli:     ERROR | An error occurred during execution of process (Find details in './hermes.log')
+1777040034.043097:          hermes.cli:     DEBUG | Original exception was: [Errno 2] No such file or directory: 'hermes.toml'
+1777040034.501835:          hermes.cli:     DEBUG | Running hermes with the following command line arguments: Namespace(subcommand='process', path=PosixPath('.'), config=PosixPath('hermes.toml'), options=[], command=<hermes.commands.process.base.HermesProcessCommand object at 0x7f9e6e3ff560>)
+1777040034.502019:          hermes.cli:     DEBUG | Loading settings...
+1777040034.502098:      hermes.process:     ERROR | hermes.toml was not found. Try to run 'hermes init' first or create one manually.
+1777040034.502160:          hermes.cli:     ERROR | An error occurred during execution of process (Find details in './hermes.log')
+1777040034.502250:          hermes.cli:     DEBUG | Original exception was: [Errno 2] No such file or directory: 'hermes.toml'
+1777040066.166445:          hermes.cli:     DEBUG | Running hermes with the following command line arguments: Namespace(subcommand='process', path=PosixPath('.'), config=PosixPath('hermes.toml'), options=[], command=<hermes.commands.process.base.HermesProcessCommand object at 0x735439116cf0>)
+1777040066.166662:          hermes.cli:     DEBUG | Loading settings...
+1777040066.166739:      hermes.process:     ERROR | hermes.toml was not found. Try to run 'hermes init' first or create one manually.
+1777040066.166800:          hermes.cli:     ERROR | An error occurred during execution of process (Find details in './hermes.log')
+1777040066.166885:          hermes.cli:     DEBUG | Original exception was: [Errno 2] No such file or directory: 'hermes.toml'
+1777040066.644876:          hermes.cli:     DEBUG | Running hermes with the following command line arguments: Namespace(subcommand='process', path=PosixPath('.'), config=PosixPath('hermes.toml'), options=[], command=<hermes.commands.process.base.HermesProcessCommand object at 0x7b0b485af7d0>)
+1777040066.645077:          hermes.cli:     DEBUG | Loading settings...
+1777040066.645146:      hermes.process:     ERROR | hermes.toml was not found. Try to run 'hermes init' first or create one manually.
+1777040066.645197:          hermes.cli:     ERROR | An error occurred during execution of process (Find details in './hermes.log')
+1777040066.645316:          hermes.cli:     DEBUG | Original exception was: [Errno 2] No such file or directory: 'hermes.toml'
+1777040067.107883:          hermes.cli:     DEBUG | Running hermes with the following command line arguments: Namespace(subcommand='process', path=PosixPath('.'), config=PosixPath('hermes.toml'), options=[], command=<hermes.commands.process.base.HermesProcessCommand object at 0x792f89616600>)
+1777040067.108071:          hermes.cli:     DEBUG | Loading settings...
+1777040067.108139:      hermes.process:     ERROR | hermes.toml was not found. Try to run 'hermes init' first or create one manually.
+1777040067.108196:          hermes.cli:     ERROR | An error occurred during execution of process (Find details in './hermes.log')
+1777040067.108324:          hermes.cli:     DEBUG | Original exception was: [Errno 2] No such file or directory: 'hermes.toml'
+1777040126.547589:          hermes.cli:     DEBUG | Running hermes with the following command line arguments: Namespace(subcommand='process', path=PosixPath('.'), config=PosixPath('hermes.toml'), options=[], command=<hermes.commands.process.base.HermesProcessCommand object at 0x7e2693ee6ab0>)
+1777040126.547760:          hermes.cli:     DEBUG | Loading settings...
+1777040126.547830:      hermes.process:     ERROR | hermes.toml was not found. Try to run 'hermes init' first or create one manually.
+1777040126.547882:          hermes.cli:     ERROR | An error occurred during execution of process (Find details in './hermes.log')
+1777040126.547968:          hermes.cli:     DEBUG | Original exception was: [Errno 2] No such file or directory: 'hermes.toml'
+1777040127.010582:          hermes.cli:     DEBUG | Running hermes with the following command line arguments: Namespace(subcommand='process', path=PosixPath('.'), config=PosixPath('hermes.toml'), options=[], command=<hermes.commands.process.base.HermesProcessCommand object at 0x7d71ba3af7d0>)
+1777040127.010787:          hermes.cli:     DEBUG | Loading settings...
+1777040127.010858:      hermes.process:     ERROR | hermes.toml was not found. Try to run 'hermes init' first or create one manually.
+1777040127.010935:          hermes.cli:     ERROR | An error occurred during execution of process (Find details in './hermes.log')
+1777040127.011078:          hermes.cli:     DEBUG | Original exception was: [Errno 2] No such file or directory: 'hermes.toml'
+1777040127.489116:          hermes.cli:     DEBUG | Running hermes with the following command line arguments: Namespace(subcommand='process', path=PosixPath('.'), config=PosixPath('hermes.toml'), options=[], command=<hermes.commands.process.base.HermesProcessCommand object at 0x7a81ef06f5f0>)
+1777040127.489305:          hermes.cli:     DEBUG | Loading settings...
+1777040127.489373:      hermes.process:     ERROR | hermes.toml was not found. Try to run 'hermes init' first or create one manually.
+1777040127.489422:          hermes.cli:     ERROR | An error occurred during execution of process (Find details in './hermes.log')
+1777040127.489495:          hermes.cli:     DEBUG | Original exception was: [Errno 2] No such file or directory: 'hermes.toml'
+1777045813.652514:          hermes.cli:     DEBUG | Running hermes with the following command line arguments: Namespace(subcommand='process', path=PosixPath('.'), config=PosixPath('hermes.toml'), options=[], command=<hermes.commands.process.base.HermesProcessCommand object at 0x7ac6066bda30>)
+1777045813.652706:          hermes.cli:     DEBUG | Loading settings...
+1777045813.652786:      hermes.process:     ERROR | hermes.toml was not found. Try to run 'hermes init' first or create one manually.
+1777045813.652839:          hermes.cli:     ERROR | An error occurred during execution of process (Find details in './hermes.log')
+1777045813.652912:          hermes.cli:     DEBUG | Original exception was: [Errno 2] No such file or directory: 'hermes.toml'
+1777045814.124590:          hermes.cli:     DEBUG | Running hermes with the following command line arguments: Namespace(subcommand='process', path=PosixPath('.'), config=PosixPath('hermes.toml'), options=[], command=<hermes.commands.process.base.HermesProcessCommand object at 0x7308527e3dd0>)
+1777045814.124786:          hermes.cli:     DEBUG | Loading settings...
+1777045814.124856:      hermes.process:     ERROR | hermes.toml was not found. Try to run 'hermes init' first or create one manually.
+1777045814.124908:          hermes.cli:     ERROR | An error occurred during execution of process (Find details in './hermes.log')
+1777045814.124983:          hermes.cli:     DEBUG | Original exception was: [Errno 2] No such file or directory: 'hermes.toml'
+1777045814.586310:          hermes.cli:     DEBUG | Running hermes with the following command line arguments: Namespace(subcommand='process', path=PosixPath('.'), config=PosixPath('hermes.toml'), options=[], command=<hermes.commands.process.base.HermesProcessCommand object at 0x7ba25b742f90>)
+1777045814.586504:          hermes.cli:     DEBUG | Loading settings...
+1777045814.586573:      hermes.process:     ERROR | hermes.toml was not found. Try to run 'hermes init' first or create one manually.
+1777045814.586627:          hermes.cli:     ERROR | An error occurred during execution of process (Find details in './hermes.log')
+1777045814.586707:          hermes.cli:     DEBUG | Original exception was: [Errno 2] No such file or directory: 'hermes.toml'
+1777051969.265804:          hermes.cli:     DEBUG | Running hermes with the following command line arguments: Namespace(subcommand='version', path=PosixPath('.'), config=PosixPath('hermes.toml'), options=[], command=<hermes.commands.base.HermesVersionCommand object at 0x7db7959fe810>)
+1777051969.265973:          hermes.cli:     DEBUG | Loading settings...
+1777051969.266007:          hermes.cli:     DEBUG | Update settings from command line...
+1777051969.266033:          hermes.cli:      INFO | Run subcommand version
+1777051969.266561:      hermes.version:      INFO | 0.9.1

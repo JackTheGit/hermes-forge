@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Racer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a0a; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: white; }
+        canvas { display: block; margin: 0 auto; }
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+        }
+        #ui div { margin-bottom: 8px; text-shadow: 0 0 10px rgba(0, 255, 255, 0.7); }
+        .label { font-size: 14px; color: #888; text-transform: uppercase; letter-spacing: 2px; }
+        .value { font-size: 28px; font-weight: bold; color: #0ff; }
+        #controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+            pointer-events: none;
+        }
+        #startScreen, #gameOverScreen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 10;
+        }
+        #gameOverScreen { display: none; }
+        h1 {
+            font-size: 64px;
+            color: #0ff;
+            text-shadow: 0 0 30px rgba(0, 255, 255, 0.5), 0 0 60px rgba(0, 255, 255, 0.3);
+            margin-bottom: 20px;
+            letter-spacing: 5px;
+        }
+        button {
+            padding: 15px 50px;
+            font-size: 20px;
+            background: transparent;
+            border: 2px solid #0ff;
+            color: #0ff;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            transition: all 0.3s;
+            margin-top: 20px;
+            pointer-events: all;
+        }
+        button:hover {
+            background: #0ff;
+            color: #000;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);
+        }
+        .final-time {
+            font-size: 36px;
+            color: #fff;
+            margin: 20px 0;
+        }
+        #minimap {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            border: 2px solid #0ff;
+            background: rgba(0, 0, 0, 0.7);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+<canvas id="minimap" width="200" height="150"></canvas>
+
+<div id="ui">
+    <div><span class="label">Lap</span><div class="value" id="lapDisplay">1 / 3</div></div>
+    <div><span class="label">Time</span><div class="value" id="timeDisplay">0.00</div></div>
+    <div><span class="label">Best</span><div class="value" id="bestDisplay">--</div></div>
+    <div><span class="label">Speed</span><div class="value" id="speedDisplay">0 <span style="font-size:16px">km/h</span></div></div>
+    <div><span class="label">Position</span><div class="value" id="posDisplay">1 / 4</div></div>
+</div>
+
+<div id="controls">Arrow keys to drive &middot; SPACE for boost</div>
+
+<div id="startScreen">
+    <h1>NEON RACER</h1>
+    <div style="color:#888; margin-bottom:10px;">Complete 3 laps as fast as you can</div>
+    <button onclick="startGame()">Start Engine</button>
+</div>
+
+<div id="gameOverScreen">
+    <h1>FINISH</h1>
+    <div class="final-time" id="finalTime"></div>
+    <div id="finalRank" style="font-size:24px; margin-bottom:20px;"></div>
+    <button onclick="resetGame()">Race Again</button>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const minimap = document.getElementById('minimap');
+const mmCtx = minimap.getContext('2d');
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// Track definition
+const TRACK_WIDTH = 180;
+const trackPoints = [];
+const numPoints = 40;
+for (let i = 0; i < numPoints; i++) {
+    const angle = (i / numPoints) * Math.PI * 2;
+    let r = 350;
+    if (i < 8) r += 150 * Math.sin(i * 0.8);
+    else if (i > 12 && i < 20) r -= 100 * Math.cos((i-12) * 0.6);
+    else if (i > 25 && i < 32) r += 80 * Math.sin((i-25) * 0.9);
+    const x = Math.cos(angle) * r;
+    const y = Math.sin(angle) * r;
+    trackPoints.push({ x: x + canvas.width/2, y: y + canvas.height/2, r: r, angle: angle });
+}
+
+function getTrackPoint(t) {
+    t = t % numPoints;
+    const i = Math.floor(t);
+    const f = t - i;
+    const p1 = trackPoints[i];
+    const p2 = trackPoints[(i+1) % numPoints];
+    return {
+        x: p1.x + (p2.x - p1.x) * f,
+        y: p1.y + (p2.y - p1.y) * f
+    };
+}
+
+function getTrackTangent(t) {
+    const dt = 0.01;
+    const p1 = getTrackPoint(t - dt);
+    const p2 = getTrackPoint(t + dt);
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const len = Math.sqrt(dx*dx + dy*dy);
+    return { x: dx/len, y: dy/len };
+}
+
+function getTrackNormal(t) {
+    const tan = getTrackTangent(t);
+    return { x: -tan.y, y: tan.x };
+}
+
+// Car class
+class Car {
+    constructor(isPlayer, color, startOffset) {
+        this.isPlayer = isPlayer;
+        this.color = color;
+        this.trackPos = startOffset;
+        this.across = 0;
+        this.speed = 0;
+        this.angle = 0;
+        this.maxSpeed = isPlayer ? 12 : 9 + Math.random() * 2;
+        this.accel = 0.15;
+        this.friction = 0.98;
+        this.turnSpeed = 0.06;
+        this.width = 22;
+        this.height = 38;
+        this.boost = 100;
+        this.finished = false;
+        this.finishTime = 0;
+        this.lap = 1;
+        this.lastCheckpoint = 0;
+    }
+
+    update(input) {
+        if (this.finished) return;
+
+        if (this.isPlayer) {
+            if (input.up) this.speed += this.accel;
+            if (input.down) this.speed -= this.accel;
+            if (input.boost && this.boost > 0) {
+                this.speed += 0.3;
+                this.boost -= 2;
+                if (this.boost < 0) this.boost = 0;
+            }
+            if (!input.boost && this.boost < 100) this.boost += 0.2;
+        } else {
+            // AI logic
+            const targetSpeed = this.maxSpeed;
+            if (this.speed < targetSpeed) this.speed += this.accel * 0.7;
+        }
+
+        this.speed *= this.friction;
+
+        // Move along track
+        const tangent = getTrackTangent(this.trackPos);
+        const trackSpeed = (this.speed * 0.02);
+
+        // Steer toward center of track
+        const normal = getTrackNormal(this.trackPos);
+        const centeringForce = -this.across * 0.003;
+        const aiWiggle = this.isPlayer ? 0 : (Math.sin(this.trackPos * 8 + Date.now() * 0.001) * 0.3);
+
+        if (this.isPlayer) {
+            if (input.left) this.across -= this.turnSpeed * Math.abs(this.speed);
+            if (input.right) this.across += this.turnSpeed * Math.abs(this.speed);
+        } else {
+            this.across += aiWiggle;
+        }
+
+        this.across += centeringForce;
+
+        // Clamp to track width
+        const halfWidth = TRACK_WIDTH / 2 - 20;
+        if (this.across < -halfWidth) { this.across = -halfWidth; this.speed *= 0.9; }
+        if (this.across > halfWidth) { this.across = halfWidth; this.speed *= 0.9; }
+
+        // Offroad slowdown
+        if (Math.abs(this.across) > halfWidth - 10) {
+            this.speed *= 0.95;
+        }
+
+        // Update track position
+        this.trackPos += trackSpeed;
+        if (this.trackPos >= numPoints) {
+            this.trackPos -= numPoints;
+            this.lap++;
+            if (this.isPlayer && this.lap > 3) {
+                this.finished = true;
+                this.finishTime = raceTime;
+            } else if (!this.isPlayer && this.lap > 3) {
+                this.finished = true;
+                this.finishTime = raceTime;
+            }
+        }
+
+        // Calculate world position
+        const trackPt = getTrackPoint(this.trackPos);
+        const n = getTrackNormal(this.trackPos);
+        this.x = trackPt.x + n.x * this.across;
+        this.y = trackPt.y + n.y * this.across;
+
+        // Calculate visual angle
+        const tan = getTrackTangent(this.trackPos);
+        let targetAngle = Math.atan2(tan.y, tan.x) + Math.PI / 2;
+        if (this.isPlayer) {
+            if (input.left) targetAngle -= 0.15;
+            if (input.right) targetAngle += 0.15;
+        }
+        // Smooth angle
+        let diff = targetAngle - this.angle;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        this.angle += diff * 0.1;
+
+        // Particles when boosting
+        if (this.isPlayer && input.boost && this.boost > 0 && Math.random() > 0.5) {
+            const backX = this.x - Math.cos(this.angle) * 20;
+            const backY = this.y - Math.sin(this.angle) * 20;
+            particles.push(new Particle(backX, backY, this.color, true));
+        }
+    }
+
+    draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        ctx.fillRect(-this.width/2 + 3, -this.height/2 + 3, this.width, this.height);
+
+        // Car body
+        ctx.fillStyle = this.color;
+        ctx.fillRect(-this.width/2, -this.height/2, this.width, this.height);
+
+        // Stripe
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.fillRect(-3, -this.height/2, 6, this.height);
+
+        // Windshield
+        ctx.fillStyle = '#222';
+        ctx.fillRect(-this.width/2 + 2, -this.height/4, this.width - 4, this.height/5);
+
+        // Headlights
+        ctx.fillStyle = '#ffeb3b';
+        ctx.fillRect(-this.width/2 + 2, this.height/2 - 2, 6, 4);
+        ctx.fillRect(this.width/2 - 8, this.height/2 - 2, 6, 4);
+
+        // Taillights
+        ctx.fillStyle = '#f44336';
+        ctx.fillRect(-this.width/2 + 2, -this.height/2, 6, 4);
+        ctx.fillRect(this.width/2 - 8, -this.height/2, 6, 4);
+
+        // Headlight beams
+        ctx.globalCompositeOperation = 'screen';
+        const grad = ctx.createRadialGradient(0, this.height/2, 5, 0, this.height/2 + 60, 60);
+        grad.addColorStop(0, 'rgba(255, 255, 200, 0.3)');
+        grad.addColorStop(1, 'rgba(255, 255, 200, 0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(-this.width/2 + 2, this.height/2);
+        ctx.lineTo(-40, this.height/2 + 120);
+        ctx.lineTo(40, this.height/2 + 120);
+        ctx.lineTo(this.width/2 - 2, this.height/2);
+        ctx.fill();
+
+        ctx.restore();
+
+        // Label for AI
+        if (!this.isPlayer) {
+            ctx.fillStyle = '#fff';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('CPU', this.x, this.y - 30);
+        }
+    }
+}
+
+class Particle {
+    constructor(x, y, color, isBoost) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 3;
+        this.vy = (Math.random() - 0.5) * 3;
+        this.life = 1;
+        this.decay = 0.03 + Math.random() * 0.03;
+        this.color = color;
+        this.isBoost = isBoost;
+        this.size = isBoost ? 4 + Math.random() * 4 : 2;
+    }
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= this.decay;
+        this.size *= 0.95;
+    }
+    draw(ctx) {
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.isBoost ? '#0ff' : '#fff';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    }
+}
+
+// Game state
+let player, cars, particles, raceTime, gameRunning, bestTime;
+let camera = { x: 0, y: 0 };
+
+const keys = {};
+window.addEventListener('keydown', e => { keys[e.key] = true; if(e.key===' ') e.preventDefault(); });
+window.addEventListener('keyup', e => keys[e.key] = false);
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+});
+
+function initGame() {
+    // Regenerate track center based on screen size
+    for (let i = 0; i < numPoints; i++) {
+        const angle = (i / numPoints) * Math.PI * 2;
+        let r = Math.min(canvas.width, canvas.height) * 0.32;
+        if (i < 8) r += r * 0.4 * Math.sin(i * 0.8);
+        else if (i > 12 && i < 20) r -= r * 0.25 * Math.cos((i-12) * 0.6);
+        else if (i > 25 && i < 32) r += r * 0.2 * Math.sin((i-25) * 0.9);
+        trackPoints[i].x = Math.cos(angle) * r + canvas.width/2;
+        trackPoints[i].y = Math.sin(angle) * r + canvas.height/2;
+        trackPoints[i].r = r;
+    }
+
+    player = new Car(true, '#0ff', 0);
+    cars = [
+        player,
+        new Car(false, '#f44336', 0.5),
+        new Car(false, '#4caf50', 1.0),
+        new Car(false, '#ff9800', 1.5)
+    ];
+    particles = [];
+    raceTime = 0;
+    gameRunning = true;
+    bestTime = localStorage.getItem('neonRacerBest') || null;
+}
+
+function startGame() {
+    document.getElementById('startScreen').style.display = 'none';
+    document.getElementById('gameOverScreen').style.display = 'none';
+    initGame();
+    gameLoop();
+}
+
+function resetGame() {
+    document.getElementById('gameOverScreen').style.display = 'none';
+    initGame();
+    gameLoop();
+}
+
+function drawTrack() {
+    // Outer border
+    ctx.lineWidth = TRACK_WIDTH + 40;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#1a1a1a';
+    ctx.beginPath();
+    for (let i = 0; i <= numPoints; i++) {
+        const p = trackPoints[i % numPoints];
+        if (i === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+
+    // Road
+    ctx.lineWidth = TRACK_WIDTH;
+    ctx.strokeStyle = '#2a2a2a';
+    ctx.stroke();
+
+    // Inner grass
+    ctx.fillStyle = '#0d1f0d';
+    ctx.beginPath();
+    for (let i = 0; i < numPoints; i++) {
+        const p = trackPoints[i];
+        const n = getTrackNormal(i);
+        const innerX = p.x - n.x * (TRACK_WIDTH/2);
+        const innerY = p.y - n.y * (TRACK_WIDTH/2);
+        if (i === 0) ctx.moveTo(innerX, innerY);
+        else ctx.lineTo(innerX, innerY);
+    }
+    ctx.closePath();
+    ctx.fill();
+
+    // Center line
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    ctx.setLineDash([20, 20]);
+    ctx.beginPath();
+    for (let i = 0; i <= numPoints; i++) {
+        const p = trackPoints[i % numPoints];
+        if (i === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Start/finish line
+    const sp = trackPoints[0];
+    const sn = getTrackNormal(0);
+    const st = getTrackTangent(0);
+    ctx.save();
+    ctx.translate(sp.x, sp.y);
+    ctx.rotate(Math.atan2(st.y, st.x));
+    for (let i = -TRACK_WIDTH/2; i < TRACK_WIDTH/2; i += 15) {
+        ctx.fillStyle = ((i/15) % 2 === 0) ? '#fff' : '#000';
+        ctx.fillRect(i, -15, 15, 30);
+    }
+    ctx.restore();
+
+    // Edge neon lines
+    ctx.lineWidth = 3;
+    ctx.shadowBlur = 15;
+    for (let side = -1; side <= 1; side += 2) {
+        ctx.shadowColor = side === -1 ? '#f0f' : '#0ff';
+        ctx.strokeStyle = side === -1 ? 'rgba(255,0,255,0.6)' : 'rgba(0,255,255,0.6)';
+        ctx.beginPath();
+        for (let i = 0; i <= numPoints; i++) {
+            const p = trackPoints[i % numPoints];
+            const n = getTrackNormal(i % numPoints);
+            const x = p.x + n.x * side * (TRACK_WIDTH/2);
+            const y = p.y + n.y * side * (TRACK_WIDTH/2);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+}
+
+function drawMinimap() {
+    mmCtx.fillStyle = '#000';
+    mmCtx.fillRect(0, 0, 200, 150);
+
+    // Track
+    mmCtx.strokeStyle = '#333';
+    mmCtx.lineWidth = 8;
+    mmCtx.beginPath();
+    for (let i = 0; i <= numPoints; i++) {
+        const p = trackPoints[i % numPoints];
+        const mx = (p.x - canvas.width/2) / Math.min(canvas.width, canvas.height) * 80 + 100;
+        const my = (p.y - canvas.height/2) / Math.min(canvas.width, canvas.height) * 60 + 75;
+        if (i === 0) mmCtx.moveTo(mx, my);
+        else mmCtx.lineTo(mx, my);
+    }
+    mmCtx.closePath();
+    mmCtx.stroke();
+
+    // Cars
+    for (const car of cars) {
+        const mx = (car.x - canvas.width/2) / Math.min(canvas.width, canvas.height) * 80 + 100;
+        const my = (car.y - canvas.height/2) / Math.min(canvas.width, canvas.height) * 60 + 75;
+        mmCtx.fillStyle = car.color;
+        mmCtx.beginPath();
+        mmCtx.arc(mx, my, 4, 0, Math.PI * 2);
+        mmCtx.fill();
+    }
+}
+
+function checkFinish() {
+    const allFinished = cars.every(c => c.finished);
+    if (allFinished && gameRunning) {
+        gameRunning = false;
+        let rank = 1;
+        for (const car of cars) {
+            if (car !== player && car.finishTime < player.finishTime) rank++;
+        }
+        const mins = Math.floor(player.finishTime / 60);
+        const secs = (player.finishTime % 60).toFixed(2);
+        document.getElementById('finalTime').textContent = `${mins}:${secs.padStart(5, '0')}`;
+        const rankText = rank === 1 ? '1st Place!' : rank === 2 ? '2nd Place' : rank === 3 ? '3rd Place' : '4th Place';
+        document.getElementById('finalRank').textContent = rankText;
+        document.getElementById('finalRank').style.color = rank === 1 ? '#ffd700' : rank === 2 ? '#c0c0c0' : rank === 3 ? '#cd7f32' : '#888';
+        document.getElementById('gameOverScreen').style.display = 'flex';
+
+        if (!bestTime || player.finishTime < parseFloat(bestTime)) {
+            bestTime = player.finishTime;
+            localStorage.setItem('neonRacerBest', bestTime);
+        }
+    }
+}
+
+function gameLoop() {
+    if (!gameRunning) return;
+
+    // Clear
+    ctx.fillStyle = '#0a0a0a';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Input
+    const input = {
+        up: keys['ArrowUp'] || keys['w'] || keys['W'],
+        down: keys['ArrowDown'] || keys['s'] || keys['S'],
+        left: keys['ArrowLeft'] || keys['a'] || keys['A'],
+        right: keys['ArrowRight'] || keys['d'] || keys['D'],
+        boost: keys[' ']
+    };
+
+    // Update
+    raceTime += 1/60;
+    for (const car of cars) car.update(input);
+    for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        if (particles[i].life <= 0) particles.splice(i, 1);
+    }
+
+    // Camera follows player
+    camera.x = player.x - canvas.width / 2;
+    camera.y = player.y - canvas.height / 2;
+
+    // Draw world
+    ctx.save();
+    ctx.translate(-camera.x, -camera.y);
+
+    // Grid background
+    ctx.strokeStyle = 'rgba(0,255,255,0.03)';
+    ctx.lineWidth = 1;
+    const gridSize = 100;
+    const startX = Math.floor(camera.x / gridSize) * gridSize;
+    const startY = Math.floor(camera.y / gridSize) * gridSize;
+    for (let x = startX; x < camera.x + canvas.width + gridSize; x += gridSize) {
+        ctx.beginPath(); ctx.moveTo(x, camera.y); ctx.lineTo(x, camera.y + canvas.height); ctx.stroke();
+    }
+    for (let y = startY; y < camera.y + canvas.height + gridSize; y += gridSize) {
+        ctx.beginPath(); ctx.moveTo(camera.x, y); ctx.lineTo(camera.x + canvas.width, y); ctx.stroke();
+    }
+
+    drawTrack();
+
+    // Skid marks
+    ctx.globalAlpha = 0.3;
+    for (const car of cars) {
+        if (Math.abs(car.speed) > 8) {
+            ctx.fillStyle = '#111';
+            const n = getTrackNormal(car.trackPos);
+            ctx.fillRect(car.x - n.x * 10 - 2, car.y - n.y * 10 - 2, 4, 4);
+            ctx.fillRect(car.x + n.x * 10 - 2, car.y + n.y * 10 - 2, 4, 4);
+        }
+    }
+    ctx.globalAlpha = 1;
+
+    // Particles
+    for (const p of particles) p.draw(ctx);
+
+    // Cars sorted by Y for depth
+    cars.sort((a, b) => a.y - b.y);
+    for (const car of cars) car.draw(ctx);
+
+    ctx.restore();
+
+    // UI
+    document.getElementById('lapDisplay').textContent = `${Math.min(player.lap, 3)} / 3`;
+    const mins = Math.floor(raceTime / 60);
+    const secs = (raceTime % 60).toFixed(2);
+    document.getElementById('timeDisplay').textContent = `${mins}:${secs.padStart(5, '0')}`;
+    if (bestTime) {
+        const bmins = Math.floor(bestTime / 60);
+        const bsecs = (bestTime % 60).toFixed(2);
+        document.getElementById('bestDisplay').textContent = `${bmins}:${bsecs.padStart(5, '0')}`;
+    }
+    const speedKmh = Math.abs(Math.round(player.speed * 15));
+    document.getElementById('speedDisplay').innerHTML = `${speedKmh} <span style="font-size:16px">km/h</span>`;
+
+    // Position
+    const sorted = [...cars].sort((a, b) => {
+        if (a.lap !== b.lap) return b.lap - a.lap;
+        return b.trackPos - a.trackPos;
+    });
+    const pos = sorted.indexOf(player) + 1;
+    document.getElementById('posDisplay').textContent = `${pos} / ${cars.length}`;
+
+    // Boost bar
+    const boostPct = player.boost;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(canvas.width/2 - 102, canvas.height - 40, 204, 14);
+    ctx.fillStyle = boostPct > 30 ? '#0ff' : '#f44336';
+    ctx.fillRect(canvas.width/2 - 100, canvas.height - 38, boostPct * 2, 10);
+
+    drawMinimap();
+    checkFinish();
+
+    requestAnimationFrame(gameLoop);
+}
+
+// Draw start screen background
+function drawMenuBg() {
+    if (document.getElementById('startScreen').style.display === 'none') return;
+    ctx.fillStyle = '#0a0a0a';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Static track
+    for (let i = 0; i < numPoints; i++) {
+        const angle = (i / numPoints) * Math.PI * 2;
+        let r = Math.min(canvas.width, canvas.height) * 0.32;
+        if (i < 8) r += r * 0.4 * Math.sin(i * 0.8);
+        else if (i > 12 && i < 20) r -= r * 0.25 * Math.cos((i-12) * 0.6);
+        else if (i > 25 && i < 32) r += r * 0.2 * Math.sin((i-25) * 0.9);
+        trackPoints[i].x = Math.cos(angle) * r + canvas.width/2;
+        trackPoints[i].y = Math.sin(angle) * r + canvas.height/2;
+    }
+    ctx.save();
+    drawTrack();
+    ctx.restore();
+}
+
+// Init track for menu
+drawMenuBg();
+</script>
+</body>
+</html>

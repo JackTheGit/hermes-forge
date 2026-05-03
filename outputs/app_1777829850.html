@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simple Draw</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%;
+    background: #1a1a1a;
+    color: #eee;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    overflow: hidden;
+    user-select: none;
+  }
+  .app {
+    display: flex;
+    flex-direction: column;
+    width: 100vw;
+    height: 100vh;
+  }
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: #222;
+    border-bottom: 1px solid #333;
+    flex-wrap: wrap;
+    z-index: 2;
+  }
+  .toolbar .group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    border-right: 1px solid #333;
+  }
+  .toolbar .group:last-child { border-right: none; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #444;
+    background: #2a2a2a;
+    color: #ddd;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background .15s, border-color .15s, transform .05s;
+  }
+  .btn:hover { background: #333; border-color: #555; }
+  .btn:active { transform: translateY(1px); }
+  .btn.active {
+    background: #3a3a3a;
+    border-color: #888;
+    color: #fff;
+  }
+  .btn svg { width: 18px; height: 18px; fill: currentColor; }
+  .color-swatch {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 2px solid #555;
+    cursor: pointer;
+    position: relative;
+    transition: transform .1s;
+  }
+  .color-swatch.active { border-color: #fff; transform: scale(1.1); }
+  .color-swatch input[type="color"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .swatches { display: flex; gap: 6px; align-items: center; }
+  .slider-wrap { display: flex; align-items: center; gap: 8px; }
+  .slider-wrap label { font-size: 12px; color: #aaa; }
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    width: 120px; height: 6px;
+    background: #444; border-radius: 3px; outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 16px; height: 16px;
+    background: #ddd; border-radius: 50%; cursor: pointer; border: 2px solid #222;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 16px; height: 16px;
+    background: #ddd; border-radius: 50%; cursor: pointer; border: 2px solid #222;
+  }
+  .canvas-wrap {
+    flex: 1;
+    position: relative;
+    background: #111;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  canvas {
+    background: #fff;
+    box-shadow: 0 0 40px rgba(0,0,0,0.6);
+    touch-action: none;
+    cursor: crosshair;
+  }
+  .hint {
+    position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+    color: #666; font-size: 12px; pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="toolbar">
+    <div class="group">
+      <button class="btn active" id="btn-pen" title="Pen" onclick="setTool('pen')">
+        <svg viewBox="0 0 24 24"><path d="M3 21h3.75L17.81 9.94l-3.75-3.75L3 17.25V21zm2-2.92l9.06-9.06.92.92L5.92 19H5v-.92zM18.37 3.29a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83a.996.996 0 0 0 0-1.41l-2.34-2.34z"/></svg>
+        Pen
+      </button>
+      <button class="btn" id="btn-eraser" title="Eraser" onclick="setTool('eraser')">
+        <svg viewBox="0 0 24 24"><path d="M16.24 3.56l4.95 4.94c.78.79.78 2.05 0 2.84L12 20.53a4.008 4.008 0 0 1-5.66 0L2.81 17c-.78-.79-.78-2.05 0-2.84l8.49-8.49c.79-.78 2.05-.78 2.84 0l2.1 2.1zm-2.83 2.83L4.91 14.89l2.12 2.12 8.49-8.49-2.11-2.13z"/></svg>
+        Eraser
+      </button>
+    </div>
+    <div class="group swatches">
+      <div class="color-swatch active" style="background:#111" data-color="#111" onclick="setColor('#111',this)"></div>
+      <div class="color-swatch" style="background:#e53935" data-color="#e53935" onclick="setColor('#e53935',this)"></div>
+      <div class="color-swatch" style="background:#1e88e5" data-color="#1e88e5" onclick="setColor('#1e88e5',this)"></div>
+      <div class="color-swatch" style="background:#43a047" data-color="#43a047" onclick="setColor('#43a047',this)"></div>
+      <div class="color-swatch" style="background:#fdd835" data-color="#fdd835" onclick="setColor('#fdd835',this)"></div>
+      <div class="color-swatch" style="background:#8e24aa" data-color="#8e24aa" onclick="setColor('#8e24aa',this)"></div>
+      <div class="color-swatch" style="background:#fff; position:relative;" title="Custom">
+        <div id="custom-indicator" style="position:absolute; inset:4px; border-radius:50%; background:#111;"></div>
+        <input type="color" value="#111111" oninput="setColor(this.value,this.parentElement)" onchange="setColor(this.value,this.parentElement)">
+      </div>
+    </div>
+    <div class="group slider-wrap">
+      <label>Size</label>
+      <input type="range" id="size" min="1" max="80" value="5" oninput="setSize(this.value)">
+      <span id="size-val" style="min-width:28px;font-size:12px;color:#aaa;">5</span>
+    </div>
+    <div class="group">
+      <button class="btn" title="Undo" onclick="undo()">
+        <svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62A7.95 7.95 0 0 1 12.5 10c3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 10.37 17.15 8 12.5 8z"/></svg>
+        Undo
+      </button>
+      <button class="btn" title="Redo" onclick="redo()">
+        <svg viewBox="0 0 24 24"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 2.37-10.37 5.72l2.37.78C4.55 11.31 7.56 9 11.1 9c2.13 0 4.08.84 5.52 2.2l-3.62 3.62h9V6l-3.6 4.6z"/></svg>
+        Redo
+      </button>
+    </div>
+    <div class="group">
+      <button class="btn" title="Clear Canvas" onclick="clearCanvas()">
+        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        Clear
+      </button>
+      <button class="btn" title="Save" onclick="saveCanvas()">
+        <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+        Save
+      </button>
+    </div>
+  </div>
+  <div class="canvas-wrap" id="wrap">
+    <canvas id="c"></canvas>
+    <div class="hint">Click and drag to draw · Right-click to pick color</div>
+  </div>
+</div>
+
+<script>
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const wrap = document.getElementById('wrap');
+
+  let drawing = false;
+  let tool = 'pen';
+  let color = '#111111';
+  let size = 5;
+  let history = [];
+  let historyStep = -1;
+  const MAX_HISTORY = 40;
+
+  function resize() {
+    const rect = wrap.getBoundingClientRect();
+    const pad = 40;
+    let w = Math.max(320, Math.floor(rect.width - pad));
+    let h = Math.max(240, Math.floor(rect.height - pad));
+    let temp;
+    if (canvas.width > 0 && canvas.height > 0) {
+      temp = document.createElement('canvas');
+      temp.width = canvas.width; temp.height = canvas.height;
+      temp.getContext('2d').drawImage(canvas, 0, 0);
+    }
+    canvas.width = w; canvas.height = h;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+    if (temp) {
+      ctx.drawImage(temp, 0, 0);
+    }
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  saveState();
+
+  function getPos(e) {
+    const r = canvas.getBoundingClientRect();
+    if (e.touches && e.touches.length) {
+      return { x: e.touches[0].clientX - r.left, y: e.touches[0].clientY - r.top };
+    }
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+
+  function start(e) {
+    if (e.button === 2) return;
+    drawing = true;
+    const p = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    e.preventDefault();
+  }
+
+  function move(e) {
+    if (!drawing) return;
+    const p = getPos(e);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    e.preventDefault();
+  }
+
+  function end(e) {
+    if (!drawing) return;
+    drawing = false;
+    ctx.closePath();
+    saveState();
+  }
+
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', move);
+  window.addEventListener('mouseup', end);
+  canvas.addEventListener('touchstart', start, { passive: false });
+  canvas.addEventListener('touchmove', move, { passive: false });
+  canvas.addEventListener('touchend', end);
+
+  canvas.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+    const r = canvas.getBoundingClientRect();
+    const x = Math.floor(e.clientX - r.left);
+    const y = Math.floor(e.clientY - r.top);
+    const pixel = ctx.getImageData(x, y, 1, 1).data;
+    const hex = '#' + [pixel[0], pixel[1], pixel[2]].map(v => v.toString(16).padStart(2,'0')).join('');
+    setColor(hex, null);
+  });
+
+  function setTool(name) {
+    tool = name;
+    document.getElementById('btn-pen').classList.toggle('active', name === 'pen');
+    document.getElementById('btn-eraser').classList.toggle('active', name === 'eraser');
+    updateContext();
+  }
+
+  function setColor(c, el) {
+    color = c;
+    if (tool === 'eraser') setTool('pen');
+    updateContext();
+    if (el) {
+      document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+      el.classList.add('active');
+    }
+    document.getElementById('custom-indicator').style.background = c;
+  }
+
+  function setSize(v) {
+    size = parseInt(v, 10);
+    document.getElementById('size-val').textContent = size;
+    updateContext();
+  }
+
+  function updateContext() {
+    ctx.lineWidth = size;
+    if (tool === 'eraser') {
+      ctx.strokeStyle = '#ffffff';
+      ctx.globalCompositeOperation = 'source-over';
+    } else {
+      ctx.strokeStyle = color;
+      ctx.globalCompositeOperation = 'source-over';
+    }
+  }
+
+  function saveState() {
+    historyStep++;
+    if (historyStep < history.length) {
+      history.length = historyStep;
+    }
+    history.push(canvas.toDataURL());
+    if (history.length > MAX_HISTORY) {
+      history.shift();
+      historyStep--;
+    }
+  }
+
+  function undo() {
+    if (historyStep > 0) {
+      historyStep--;
+      restore(history[historyStep]);
+    }
+  }
+
+  function redo() {
+    if (historyStep < history.length - 1) {
+      historyStep++;
+      restore(history[historyStep]);
+    }
+  }
+
+  function restore(dataURL) {
+    const img = new Image();
+    img.onload = function() {
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+    };
+    img.src = dataURL;
+  }
+
+  function clearCanvas() {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    saveState();
+  }
+
+  function saveCanvas() {
+    const link = document.createElement('a');
+    link.download = 'drawing.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+      e.preventDefault();
+      if (e.shiftKey) redo(); else undo();
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      saveCanvas();
+    }
+  });
+
+  updateContext();
+</script>
+</body>
+</html>

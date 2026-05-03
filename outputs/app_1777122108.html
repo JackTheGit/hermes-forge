@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DrawPad</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #1a1a2e;
+  color: #eee;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: #16213e;
+  border-bottom: 1px solid #0f3460;
+  flex-wrap: wrap;
+}
+.tool-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border-right: 1px solid #0f3460;
+}
+.tool-group:last-child { border-right: none; }
+button {
+  background: #0f3460;
+  border: 1px solid #1a1a2e;
+  color: #eee;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.15s;
+}
+button:hover { background: #1a4a7a; }
+button.active {
+  background: #e94560;
+  border-color: #e94560;
+}
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+input[type="color"] {
+  width: 40px;
+  height: 36px;
+  border: 1px solid #0f3460;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+input[type="range"] {
+  width: 100px;
+  accent-color: #e94560;
+}
+label { font-size: 12px; color: #aaa; }
+.palette {
+  display: flex;
+  gap: 4px;
+}
+.swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+.swatch:hover { transform: scale(1.1); }
+.swatch.active { border-color: #fff; }
+.canvas-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: #0f0f23;
+}
+canvas {
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  cursor: crosshair;
+  max-width: 100%;
+  max-height: 100%;
+}
+.info {
+  position: absolute;
+  bottom: 10px;
+  right: 16px;
+  font-size: 11px;
+  color: #555;
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <div class="tool-group">
+    <button class="btn-icon active" id="tool-brush" title="Brush (B)">✏️</button>
+    <button class="btn-icon" id="tool-eraser" title="Eraser (E)">🧼</button>
+    <button class="btn-icon" id="tool-line" title="Line (L)">📏</button>
+    <button class="btn-icon" id="tool-rect" title="Rectangle (R)">▭</button>
+    <button class="btn-icon" id="tool-circle" title="Circle (C)">◯</button>
+  </div>
+  <div class="tool-group">
+    <label>Color</label>
+    <input type="color" id="color" value="#000000">
+    <div class="palette">
+      <div class="swatch active" style="background:#000" data-color="#000"></div>
+      <div class="swatch" style="background:#e94560" data-color="#e94560"></div>
+      <div class="swatch" style="background:#0f3460" data-color="#0f3460"></div>
+      <div class="swatch" style="background:#16c79a" data-color="#16c79a"></div>
+      <div class="swatch" style="background:#f9a825" data-color="#f9a825"></div>
+      <div class="swatch" style="background:#7b1fa2" data-color="#7b1fa2"></div>
+      <div class="swatch" style="background:#fff; border:1px solid #333" data-color="#fff"></div>
+    </div>
+  </div>
+  <div class="tool-group">
+    <label>Size</label>
+    <input type="range" id="size" min="1" max="50" value="3">
+    <span id="size-val" style="font-size:12px;min-width:24px;">3</span>
+  </div>
+  <div class="tool-group">
+    <label>Opacity</label>
+    <input type="range" id="opacity" min="1" max="100" value="100">
+    <span id="opacity-val" style="font-size:12px;min-width:28px;">100%</span>
+  </div>
+  <div class="tool-group">
+    <button id="undo" title="Undo (Ctrl+Z)">↩️ Undo</button>
+    <button id="redo" title="Redo (Ctrl+Y)">↪️ Redo</button>
+    <button id="clear" title="Clear (Delete)">🗑️ Clear</button>
+    <button id="save" title="Save (Ctrl+S)">💾 Save</button>
+  </div>
+</div>
+<div class="canvas-container">
+  <canvas id="canvas" width="1200" height="800"></canvas>
+</div>
+<div class="info">DrawPad — Click and drag to draw</div>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let drawing = false;
+let tool = 'brush';
+let color = '#000000';
+let size = 3;
+let alpha = 1;
+let startX = 0;
+let startY = 0;
+let snapshot = null;
+const undoStack = [];
+const redoStack = [];
+
+function saveState() {
+  undoStack.push(canvas.toDataURL());
+  if (undoStack.length > 30) undoStack.shift();
+  redoStack.length = 0;
+}
+function restoreState(dataUrl) {
+  const img = new Image();
+  img.onload = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+  };
+  img.src = dataUrl;
+}
+function pushRedo() { redoStack.push(canvas.toDataURL()); }
+function getPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  if (e.touches) {
+    return { x: (e.touches[0].clientX - rect.left) * scaleX, y: (e.touches[0].clientY - rect.top) * scaleY };
+  }
+  return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+}
+
+function startDraw(e) {
+  e.preventDefault();
+  drawing = true;
+  const p = getPos(e);
+  startX = p.x; startY = p.y;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.lineWidth = size;
+  ctx.globalAlpha = alpha;
+  if (tool === 'eraser') {
+    ctx.globalCompositeOperation = 'destination-out';
+  } else {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = color; ctx.fillStyle = color;
+  }
+  if (tool === 'brush' || tool === 'eraser') {
+    saveState();
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+  } else {
+    snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  }
+}
+function draw(e) {
+  if (!drawing) return;
+  e.preventDefault();
+  const p = getPos(e);
+  if (tool === 'brush' || tool === 'eraser') {
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+  } else {
+    ctx.putImageData(snapshot, 0, 0);
+    ctx.beginPath();
+    if (tool === 'line') {
+      ctx.moveTo(startX, startY); ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+    } else if (tool === 'rect') {
+      ctx.strokeRect(startX, startY, p.x - startX, p.y - startY);
+    } else if (tool === 'circle') {
+      const r = Math.hypot(p.x - startX, p.y - startY);
+      ctx.arc(startX, startY, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+}
+function endDraw(e) {
+  if (!drawing) return;
+  drawing = false;
+  if (tool !== 'brush' && tool !== 'eraser') saveState();
+  ctx.beginPath();
+}
+
+canvas.addEventListener('mousedown', startDraw);
+canvas.addEventListener('mousemove', draw);
+canvas.addEventListener('mouseup', endDraw);
+canvas.addEventListener('mouseout', endDraw);
+canvas.addEventListener('touchstart', startDraw, {passive:false});
+canvas.addEventListener('touchmove', draw, {passive:false});
+canvas.addEventListener('touchend', endDraw);
+
+document.getElementById('size').addEventListener('input', e => {
+  size = +e.target.value;
+  document.getElementById('size-val').textContent = size;
+});
+document.getElementById('opacity').addEventListener('input', e => {
+  alpha = +e.target.value / 100;
+  document.getElementById('opacity-val').textContent = e.target.value + '%';
+});
+document.getElementById('color').addEventListener('input', e => {
+  color = e.target.value;
+  document.querySelectorAll('.swatch').forEach(s => s.classList.toggle('active', s.dataset.color === color));
+});
+document.querySelectorAll('.swatch').forEach(s => {
+  s.addEventListener('click', () => {
+    color = s.dataset.color;
+    document.getElementById('color').value = color;
+    document.querySelectorAll('.swatch').forEach(x => x.classList.remove('active'));
+    s.classList.add('active');
+  });
+});
+function setTool(t) {
+  tool = t;
+  document.querySelectorAll('.btn-icon').forEach(b => b.classList.remove('active'));
+  document.getElementById('tool-' + t).classList.add('active');
+}
+['brush','eraser','line','rect','circle'].forEach(t => {
+  document.getElementById('tool-'+t).addEventListener('click', () => setTool(t));
+});
+document.getElementById('clear').addEventListener('click', () => {
+  saveState();
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+});
+document.getElementById('undo').addEventListener('click', () => {
+  if (!undoStack.length) return;
+  pushRedo();
+  restoreState(undoStack.pop());
+});
+document.getElementById('redo').addEventListener('click', () => {
+  if (!redoStack.length) return;
+  undoStack.push(canvas.toDataURL());
+  restoreState(redoStack.pop());
+});
+document.getElementById('save').addEventListener('click', () => {
+  const a = document.createElement('a');
+  a.download = 'drawing.png';
+  a.href = canvas.toDataURL();
+  a.click();
+});
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey && e.key === 'z') { e.preventDefault(); document.getElementById('undo').click(); }
+  if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'Z')) { e.preventDefault(); document.getElementById('redo').click(); }
+  if (e.ctrlKey && e.key === 's') { e.preventDefault(); document.getElementById('save').click(); }
+  if (e.key === 'b') setTool('brush');
+  if (e.key === 'e') setTool('eraser');
+  if (e.key === 'l') setTool('line');
+  if (e.key === 'r') setTool('rect');
+  if (e.key === 'c') setTool('circle');
+  if (e.key === 'Delete' || e.key === 'Backspace') document.getElementById('clear').click();
+});
+saveState();
+</script>
+</body>
+</html>

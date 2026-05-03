@@ -1,0 +1,9 @@
+name: hermes-forge-build-app
+description: Generate and serve simple web apps
+version: 0.1.0
+
+entrypoint: run.py
+
+commands:
+  - name: forge
+    description: Build an app from a prompt
