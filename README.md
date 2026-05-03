@@ -48,9 +48,11 @@ Hermes Forge is an AI-powered system that generates fully interactive web apps f
 - Handles retries + improvements  
 - Outputs versioned HTML apps  
 
+
 ### 🌐 Deployment Layer
 - Local HTTP server (`python -m http.server`)  
 - Cloudflare Tunnel (public HTTPS URL)  
+
 
 ### 📱 Interface Layer
 - Telegram Bot UI  
@@ -185,14 +187,14 @@ This enables:
 Refine your app with natural language:
 > "Add undo button and color picker"
 
+
 ### ⚡ Auto Improve (v1 → v5)
 Runs multiple improvement passes automatically:
 
 - v1 → Base app  
 - v2–v5 → Progressive enhancements  
-- Better UI, UX, features  
-
----
+- Better UI, UX, features
+- 
 
 ### 📸 Preview System
 - Automatically screenshots generated apps  
@@ -240,4 +242,4 @@ Hermes Forge is evolving into:
 
 No setup. No coding. Just ideas → working apps.
 
----
+
