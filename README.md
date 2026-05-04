@@ -27,14 +27,14 @@ Hermes Forge is an AI-powered system that generates fully interactive web apps f
 
 ## ✨ Features
 
-- 🧠 Prompt → Full app generation  
+- 🧠 Prompt → full app generation  
 - ⚡ Real-time build progress (Planning → Building → Packaging)  
 - 🌐 Live hosting via HTTP + Cloudflare tunnel  
 - 📱 Telegram WebApp integration (fully interactive apps)  
 - 🔁 Regenerate apps instantly  
 - ✨ Improve apps with follow-up prompts  
 - ⚡ Auto Improve (v1 → v5 iterative enhancement)  
-- 📸 Automatic app preview screenshots  
+- 📸 Automatic app preview screenshots (Playwright)  
 - 📜 Prompt history tracking  
 - 📄 Build logs viewer  
 - 🧩 Works inside Telegram + Hermes  
@@ -45,14 +45,12 @@ Hermes Forge is an AI-powered system that generates fully interactive web apps f
 
 ### 🧠 Core Engine (Hermes Forge)
 - Generates apps from prompts  
-- Handles retries + improvements  
+- Handles retries and improvements  
 - Outputs versioned HTML apps  
-
 
 ### 🌐 Deployment Layer
 - Local HTTP server (`python -m http.server`)  
 - Cloudflare Tunnel (public HTTPS URL)  
-
 
 ### 📱 Interface Layer
 - Telegram Bot UI  
@@ -64,12 +62,12 @@ Hermes Forge is an AI-powered system that generates fully interactive web apps f
 ## ⚡ Flow
 
 1. User sends prompt in Telegram  
-2. Hermes Forge generates app  
+2. Hermes Forge generates the app  
 3. Output HTML is saved in `/outputs`  
 4. App is exposed via Cloudflare URL  
-5. Telegram shows:
+5. Telegram returns:
    - 📸 Preview screenshot  
-   - 🚀 Open App button (WebApp)  
+   - 🚀 Open App (WebApp)  
    - 🌐 Open in browser  
    - 🔁 Regenerate / Improve / Auto Improve  
 
@@ -88,48 +86,46 @@ Hermes Forge is an AI-powered system that generates fully interactive web apps f
 
 ### 1. Clone
 
-```
-
-git clone [https://github.com/JackTheGit/hermes-forge.git](https://github.com/JackTheGit/hermes-forge.git)
+```bash
+git clone https://github.com/JackTheGit/hermes-forge.git
 cd hermes-forge
-
 ```
+
+---
 
 ### 2. Create virtual environment
 
-```
-
+```bash
 python3 -m venv venv
 source venv/bin/activate
-
 ```
+
+---
 
 ### 3. Install dependencies
 
-```
-
+```bash
 pip install python-telegram-bot playwright requests python-dotenv
 python -m playwright install chromium
-
 ```
+
+---
 
 ### 4. Add environment variables
 
-Create `.env` file:
+Create a `.env` file:
 
-```
-
+```env
 TELEGRAM_TOKEN=your_bot_token_here
-
 ```
+
+---
 
 ### 5. Run everything
 
-```
-
+```bash
 chmod +x run_all.sh
 ./run_all.sh
-
 ```
 
 This automatically:
@@ -154,20 +150,18 @@ This automatically:
 
 Apps are opened natively inside Telegram:
 
-```
-
+```python
 InlineKeyboardButton(
-"🚀 Open App",
-web_app=WebAppInfo(url=APP_URL)
+    "🚀 Open App",
+    web_app=WebAppInfo(url=APP_URL)
 )
-
 ```
 
 This enables:
 
 - Full interactivity  
 - No redirects  
-- App-like experience  
+- App-like UX  
 
 ---
 
@@ -187,19 +181,23 @@ This enables:
 Refine your app with natural language:
 > "Add undo button and color picker"
 
+---
 
 ### ⚡ Auto Improve (v1 → v5)
+
 Runs multiple improvement passes automatically:
 
 - v1 → Base app  
 - v2–v5 → Progressive enhancements  
-- Better UI, UX, features
-- 
+- Better UI, UX, and features  
+
+---
 
 ### 📸 Preview System
+
 - Automatically screenshots generated apps  
 - Sends preview inside Telegram  
-- Uses Playwright (headless Chromium)  
+- Powered by Playwright (headless Chromium)  
 
 ---
 
@@ -241,5 +239,3 @@ Hermes Forge is evolving into:
 > **“Prompt → Software” as a real-time system**
 
 No setup. No coding. Just ideas → working apps.
-
-
